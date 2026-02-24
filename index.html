@@ -27,7 +27,7 @@
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       background: var(--bg);
       color: var(--text);
-      height: 100vh;
+      min-height: 100vh;
       display: flex;
       flex-direction: column;
     }
@@ -287,9 +287,38 @@
       40% { transform: scale(1); opacity: 1; }
     }
 
-    @media (max-width: 768px) {
-      .sidebar { display: none; }
+    /* Sidebar toggle for mobile */
+    .sidebar-toggle {
+      display: none; position: fixed; bottom: 24px; left: 24px; width: 48px; height: 48px;
+      background: var(--pci-blue); color: white; border: none; border-radius: 50%;
+      font-size: 20px; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+      z-index: 100; align-items: center; justify-content: center;
     }
+    .sidebar-toggle:hover { background: var(--pci-blue-light); }
+
+    @media (max-width: 768px) {
+      .sidebar { display: none; position: fixed; left: 0; top: 0; bottom: 0; z-index: 99; width: 280px; box-shadow: 4px 0 20px rgba(0,0,0,0.2); }
+      .sidebar.open { display: flex; }
+      .sidebar-toggle { display: flex; }
+      .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.3); z-index: 98; }
+      .sidebar-overlay.open { display: block; }
+    }
+
+    /* CTA Footer */
+    .cta-footer {
+      background: var(--pci-blue-dark); color: white; padding: 32px 28px; text-align: center;
+    }
+    .cta-footer h3 { font-size: 18px; margin-bottom: 8px; }
+    .cta-footer p { font-size: 13px; opacity: 0.8; margin-bottom: 16px; max-width: 500px; margin-left: auto; margin-right: auto; }
+    .cta-footer .cta-buttons { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+    .cta-footer a {
+      display: inline-block; padding: 10px 24px; border-radius: 8px; font-size: 13px; font-weight: 600;
+      text-decoration: none; transition: opacity 0.15s;
+    }
+    .cta-footer a:hover { opacity: 0.9; }
+    .cta-footer a.primary { background: var(--pci-blue-light); color: white; }
+    .cta-footer a.secondary { background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.3); }
+    .cta-footer .footer-note { font-size: 11px; opacity: 0.5; margin-top: 16px; }
   </style>
 </head>
 <body>
@@ -304,6 +333,9 @@
     </div>
     <div class="badge">AI-POWERED</div>
   </header>
+
+  <div class="sidebar-overlay" id="sidebar-overlay"></div>
+  <button class="sidebar-toggle" id="sidebar-toggle" title="Show Knowledge Base">&#x1F4DA;</button>
 
   <div class="main">
     <div class="sidebar" id="sidebar">
@@ -331,6 +363,16 @@
       </div>
     </div>
   </div>
+
+  <footer class="cta-footer">
+    <h3>See how AI-powered technical support can serve your engineering team</h3>
+    <p>Give your sales and support teams instant access to product specifications, maintenance guides, and troubleshooting — powered by AI.</p>
+    <div class="cta-buttons">
+      <a href="mailto:josh@joshmouch.com?subject=PCI%20Expert%20Co-Pilot%20Demo" class="primary">Request a Live Demo</a>
+      <a href="https://joshmouch.github.io/esi-analytics-demo/" class="secondary">See More Tools</a>
+    </div>
+    <div class="footer-note">Built by Josh Mouch · AI-Powered Manufacturing Solutions</div>
+  </footer>
 
   <script>
     // ── Embedded Knowledge Base ──────────────────────────────────────
@@ -576,6 +618,18 @@
       div.textContent = str;
       return div.innerHTML;
     }
+
+    // ── Sidebar toggle for mobile ──────────────────────────────────
+    const sidebarToggle = document.getElementById('sidebar-toggle');
+    const sidebarOverlay = document.getElementById('sidebar-overlay');
+    sidebarToggle.addEventListener('click', () => {
+      sidebarEl.classList.toggle('open');
+      sidebarOverlay.classList.toggle('open');
+    });
+    sidebarOverlay.addEventListener('click', () => {
+      sidebarEl.classList.remove('open');
+      sidebarOverlay.classList.remove('open');
+    });
   </script>
 </body>
 </html>
