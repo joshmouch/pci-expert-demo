@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PCI ProCal — Technical Expert Co-Pilot</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --pci-blue: #1a5276;
+      --pci-blue-light: #2980b9;
+      --pci-blue-dark: #0e2f44;
+      --bg: #f4f6f8;
+      --card: #ffffff;
+      --text: #2c3e50;
+      --text-light: #7f8c8d;
+      --border: #dce1e6;
+      --user-bg: #eaf2f8;
+      --source-bg: #fef9e7;
+      --source-border: #f9e79f;
+      --demo-bg: #fff3cd;
+      --demo-border: #ffc107;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .demo-banner {
+      background: var(--demo-bg);
+      border-bottom: 2px solid var(--demo-border);
+      padding: 8px 24px;
+      font-size: 13px;
+      text-align: center;
+      color: #856404;
+    }
+
+    .demo-banner strong { color: #664d03; }
+
+    header {
+      background: linear-gradient(135deg, var(--pci-blue-dark), var(--pci-blue));
+      color: white;
+      padding: 12px 24px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+      z-index: 10;
+    }
+
+    header .logo { font-size: 20px; font-weight: 700; letter-spacing: 0.5px; }
+    header .subtitle { font-size: 13px; opacity: 0.85; font-weight: 400; }
+    header .badge {
+      margin-left: auto;
+      background: rgba(255,255,255,0.15);
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+
+    .main { flex: 1; display: flex; overflow: hidden; }
+
+    /* Sidebar */
+    .sidebar {
+      width: 280px;
+      background: var(--card);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+    }
+
+    .sidebar h3 {
+      padding: 16px 16px 8px;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-light);
+    }
+
+    .doc-item {
+      padding: 10px 16px;
+      border-bottom: 1px solid var(--border);
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    .doc-item:hover { background: var(--bg); }
+    .doc-item .doc-title { font-size: 13px; font-weight: 600; color: var(--pci-blue); margin-bottom: 4px; }
+    .doc-item .doc-cat { font-size: 11px; color: var(--text-light); }
+    .doc-item .doc-sections { font-size: 11px; color: var(--text-light); margin-top: 4px; }
+    .doc-item.expanded .doc-section-list { display: block; }
+
+    .doc-section-list {
+      display: none;
+      margin-top: 6px;
+      padding-left: 8px;
+      border-left: 2px solid var(--border);
+    }
+
+    .doc-section-list li {
+      font-size: 11px;
+      color: var(--text-light);
+      padding: 2px 0;
+      list-style: none;
+    }
+
+    /* Chat area */
+    .chat-area { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+
+    .messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .message { max-width: 780px; width: 100%; line-height: 1.6; font-size: 14px; }
+
+    .message.user {
+      align-self: flex-end;
+      background: var(--user-bg);
+      padding: 12px 16px;
+      border-radius: 16px 16px 4px 16px;
+      border: 1px solid #c5d9ed;
+    }
+
+    .message.assistant { align-self: flex-start; }
+
+    .message.assistant .reply {
+      background: var(--card);
+      padding: 16px 20px;
+      border-radius: 4px 16px 16px 16px;
+      border: 1px solid var(--border);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+
+    .message.assistant .reply p { margin-bottom: 8px; }
+    .message.assistant .reply p:last-child { margin-bottom: 0; }
+    .message.assistant .reply ul, .message.assistant .reply ol { margin: 8px 0; padding-left: 20px; }
+    .message.assistant .reply li { margin-bottom: 4px; }
+    .message.assistant .reply strong { color: var(--pci-blue); }
+    .message.assistant .reply code { background: var(--bg); padding: 1px 5px; border-radius: 3px; font-size: 13px; }
+
+    .sources { margin-top: 8px; display: flex; flex-wrap: wrap; gap: 6px; }
+
+    .source-tag {
+      background: var(--source-bg);
+      border: 1px solid var(--source-border);
+      padding: 3px 10px;
+      border-radius: 10px;
+      font-size: 11px;
+      color: #7d6608;
+      cursor: default;
+    }
+
+    .source-tag .score { font-weight: 600; margin-left: 4px; }
+
+    .search-results {
+      margin-top: 12px;
+      padding: 12px 16px;
+      background: #f0f4f8;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+    }
+
+    .search-results h4 {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-light);
+      margin-bottom: 8px;
+    }
+
+    .search-result-item {
+      padding: 8px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 13px;
+    }
+
+    .search-result-item:last-child { border-bottom: none; }
+    .search-result-item .result-title { font-weight: 600; color: var(--pci-blue); font-size: 12px; }
+    .search-result-item .result-excerpt { color: var(--text); margin-top: 4px; line-height: 1.5; }
+
+    .welcome {
+      text-align: center;
+      padding: 60px 24px;
+      color: var(--text-light);
+    }
+
+    .welcome h2 { font-size: 22px; color: var(--pci-blue); margin-bottom: 12px; }
+
+    .welcome p {
+      font-size: 14px;
+      max-width: 500px;
+      margin: 0 auto 20px;
+      line-height: 1.6;
+    }
+
+    .welcome .examples { display: flex; flex-direction: column; gap: 8px; align-items: center; }
+
+    .welcome .example-btn {
+      background: var(--card);
+      border: 1px solid var(--border);
+      padding: 10px 20px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 13px;
+      color: var(--text);
+      transition: all 0.15s;
+      max-width: 480px;
+      width: 100%;
+      text-align: left;
+    }
+
+    .welcome .example-btn:hover {
+      border-color: var(--pci-blue-light);
+      background: var(--user-bg);
+    }
+
+    /* Input area */
+    .input-area {
+      padding: 16px 24px;
+      background: var(--card);
+      border-top: 1px solid var(--border);
+      display: flex;
+      gap: 12px;
+      align-items: flex-end;
+    }
+
+    .input-area textarea {
+      flex: 1;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px 16px;
+      font-size: 14px;
+      font-family: inherit;
+      resize: none;
+      min-height: 44px;
+      max-height: 120px;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+
+    .input-area textarea:focus { border-color: var(--pci-blue-light); }
+
+    .input-area button {
+      background: var(--pci-blue);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      padding: 10px 20px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s;
+      white-space: nowrap;
+    }
+
+    .input-area button:hover { background: var(--pci-blue-light); }
+    .input-area button:disabled { background: var(--border); cursor: not-allowed; }
+
+    .typing-indicator { display: flex; gap: 4px; padding: 12px 16px; }
+
+    .typing-indicator span {
+      width: 8px; height: 8px;
+      background: var(--text-light);
+      border-radius: 50%;
+      animation: bounce 1.4s infinite ease-in-out;
+    }
+
+    .typing-indicator span:nth-child(2) { animation-delay: 0.16s; }
+    .typing-indicator span:nth-child(3) { animation-delay: 0.32s; }
+
+    @keyframes bounce {
+      0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
+      40% { transform: scale(1); opacity: 1; }
+    }
+
+    @media (max-width: 768px) {
+      .sidebar { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="demo-banner">
+    <strong>Interactive Demo</strong> — This is a static preview of the PCI ProCal Technical Expert Co-Pilot. The knowledge base and search are live. AI responses shown for sample questions are pre-generated.
+  </div>
+
+  <header>
+    <div>
+      <div class="logo">PCI ProCal Innovations</div>
+      <div class="subtitle">Technical Expert Co-Pilot</div>
+    </div>
+    <div class="badge">AI-POWERED</div>
+  </header>
+
+  <div class="main">
+    <div class="sidebar" id="sidebar">
+      <h3>Knowledge Base</h3>
+    </div>
+
+    <div class="chat-area">
+      <div class="messages" id="messages">
+        <div class="welcome" id="welcome">
+          <h2>Technical Expert Co-Pilot</h2>
+          <p>Ask technical questions about PCI ProCal's product lines. Answers are sourced from engineering documentation and include citations. Try a sample question below.</p>
+          <div class="examples">
+            <button class="example-btn" onclick="askExample(this)">What is the load capacity of the SR-3000 roller assembly?</button>
+            <button class="example-btn" onclick="askExample(this)">Compare the CF-6205 and CF-6208 cam followers</button>
+            <button class="example-btn" onclick="askExample(this)">What lagging options are available for drive pulleys?</button>
+            <button class="example-btn" onclick="askExample(this)">How do I troubleshoot a pneumatic clutch that won't engage?</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="input-area">
+        <textarea id="input" placeholder="Ask a technical question..." rows="1"
+          onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMessage()}"></textarea>
+        <button id="sendBtn" onclick="sendMessage()">Send</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ── Embedded Knowledge Base ──────────────────────────────────────
+    const documents = [{"id":"roller-assemblies","title":"PCI ProCal Roller Assembly Product Line \u2014 Technical Specifications","category":"Product Specifications","sections":[{"heading":"Overview","content":"PCI ProCal Innovations manufactures a comprehensive line of load-bearing roller assemblies for material handling applications. Our roller assemblies are designed for conveying systems used in manufacturing, distribution, logistics, and food processing facilities. All assemblies are manufactured at our Alpena, MI facility and undergo 100% load testing before shipment."},{"heading":"Standard Series \u2014 SR-1000 through SR-5000","content":"The Standard Series covers the majority of general-purpose conveying applications.\n\nSR-1000: Light-duty roller assembly. Tube OD: 1.9 inches. Wall thickness: 0.065 inches (16 gauge). Bearing type: precision ball bearing, ABEC-1. Load capacity: 75 lbs per roller at 500 FPM. Shaft diameter: 7/16 inch hex or 1/2 inch round. Standard lengths: 12, 18, 24, 30, 36, 42, 48 inches. Material: carbon steel with zinc plating. Operating temperature: -20\u00b0F to 150\u00b0F.\n\nSR-2000: Medium-duty roller assembly. Tube OD: 2.5 inches. Wall thickness: 0.083 inches (14 gauge). Bearing type: precision ball bearing, ABEC-1. Load capacity: 250 lbs per roller at 500 FPM. Shaft diameter: 11/16 inch hex. Standard lengths: 12 through 60 inches in 6-inch increments. Material: carbon steel with zinc plating or galvanized. Operating temperature: -20\u00b0F to 200\u00b0F.\n\nSR-3000: Heavy-duty roller assembly. Tube OD: 3.5 inches. Wall thickness: 0.120 inches (11 gauge). Bearing type: sealed precision ball bearing, ABEC-3. Load capacity: 750 lbs per roller at 350 FPM. Shaft diameter: 7/8 inch round. Standard lengths: 18 through 72 inches. Material: carbon steel, stainless steel (304 or 316), or aluminum 6061-T6. Operating temperature: -40\u00b0F to 250\u00b0F.\n\nSR-5000: Extra-heavy-duty roller assembly. Tube OD: 5.0 inches. Wall thickness: 0.188 inches (3/16 inch). Bearing type: tapered roller bearing. Load capacity: 2,500 lbs per roller at 200 FPM. Shaft diameter: 1-1/4 inch round. Standard lengths: 24 through 84 inches. Material: carbon steel with powder coat finish. Operating temperature: -40\u00b0F to 300\u00b0F."},{"heading":"Bearing Specifications and Lubrication","content":"All PCI roller assemblies use permanently lubricated, sealed bearings unless specified otherwise. Standard lubrication is Mobil Polyrex EM synthetic grease, rated for -40\u00b0F to 350\u00b0F continuous operation. Bearing life expectancy at rated load: SR-1000: 20,000 hours; SR-2000: 25,000 hours; SR-3000: 30,000 hours; SR-5000: 40,000 hours (L10 life at rated speed). For washdown environments, IP67-rated seals are available on all series. For high-temperature applications above 300\u00b0F, optional Kl\u00fcber Isoflex NBU 15 grease is available."},{"heading":"Custom and Specialty Rollers","content":"PCI offers custom roller assemblies for specialized applications:\n\nGrooved rollers: V-groove or flat-bottom groove for belt tracking. Available on SR-2000 and above.\n\nFlanged rollers: Welded steel flanges for product guidance. Flange height: 1/2 inch to 2 inches. Available on all series.\n\nTapered rollers: For curved conveyor sections. Taper ratios from 1:16 to 1:8. Available on SR-2000 and above.\n\nSpurless end treatment: Laser-cut tube ends with no weld spatter for clean applications. Standard on food-grade configurations.\n\nPolyurethane-coated rollers: 60A to 95A durometer coating for product protection. Coating thickness: 1/8 to 1/2 inch. Available on all series.\n\nStainless steel construction: 304 SS for general corrosion resistance, 316 SS for chemical exposure and pharmaceutical applications."},{"heading":"Ordering and Lead Times","content":"Standard series rollers (carbon steel, zinc plated): 5-7 business days. Custom lengths within standard range: 7-10 business days. Specialty materials (stainless, aluminum): 10-15 business days. Polyurethane-coated rollers: 15-20 business days. Minimum order quantity: 10 units for standard, 25 units for custom. Volume pricing available for orders of 100+ units."}]},{"id":"cam-followers","title":"PCI ProCal Cam Follower Product Line \u2014 Technical Specifications","category":"Product Specifications","sections":[{"heading":"Overview","content":"PCI ProCal cam followers are precision-engineered track roller bearings designed for cam-driven mechanisms, conveyor systems, and linear motion applications. Our cam followers feature heavy-duty stud-style construction with crowned or cylindrical outer rings for optimal load distribution. All cam followers are manufactured to ABMA standards and are interchangeable with industry-standard sizes."},{"heading":"CF Series \u2014 Standard Cam Followers","content":"CF-6205: Stud diameter: 16mm (0.630 inch). Roller OD: 52mm (2.047 inches). Roller width: 20.6mm (0.811 inches). Basic dynamic load rating: 15.9 kN (3,575 lbf). Basic static load rating: 10.2 kN (2,293 lbf). Maximum speed: 3,000 RPM. Stud thread: M16x1.5. Weight: 0.22 kg.\n\nCF-6206: Stud diameter: 20mm (0.787 inch). Roller OD: 62mm (2.441 inches). Roller width: 24mm (0.945 inches). Basic dynamic load rating: 20.3 kN (4,564 lbf). Basic static load rating: 13.7 kN (3,081 lbf). Maximum speed: 2,500 RPM. Stud thread: M20x1.5. Weight: 0.38 kg.\n\nCF-6208: Stud diameter: 24mm (0.945 inch). Roller OD: 80mm (3.150 inches). Roller width: 29.5mm (1.161 inches). Basic dynamic load rating: 32.5 kN (7,308 lbf). Basic static load rating: 22.4 kN (5,035 lbf). Maximum speed: 2,000 RPM. Stud thread: M24x1.5. Weight: 0.72 kg.\n\nCF-6210: Stud diameter: 30mm (1.181 inches). Roller OD: 90mm (3.543 inches). Roller width: 32mm (1.260 inches). Basic dynamic load rating: 40.5 kN (9,107 lbf). Basic static load rating: 31.0 kN (6,969 lbf). Maximum speed: 1,800 RPM. Stud thread: M30x2.0. Weight: 1.05 kg."},{"heading":"CFH Series \u2014 Heavy-Duty Cam Followers","content":"Heavy-duty cam followers feature hardened stud construction (58-62 HRC) and full-complement needle roller bearings for maximum radial load capacity in limited space.\n\nCFH-1: Stud diameter: 1/2 inch. Roller OD: 1.000 inch. Basic dynamic load rating: 2,700 lbf. Basic static load rating: 4,750 lbf. Max speed: 2,400 RPM.\n\nCFH-1-1/4: Stud diameter: 3/4 inch. Roller OD: 1.250 inches. Basic dynamic load rating: 4,100 lbf. Basic static load rating: 7,200 lbf. Max speed: 2,000 RPM.\n\nCFH-1-1/2: Stud diameter: 7/8 inch. Roller OD: 1.500 inches. Basic dynamic load rating: 5,800 lbf. Basic static load rating: 10,600 lbf. Max speed: 1,700 RPM.\n\nCFH-2: Stud diameter: 1 inch. Roller OD: 2.000 inches. Basic dynamic load rating: 9,200 lbf. Basic static load rating: 17,000 lbf. Max speed: 1,400 RPM.\n\nCFH-3: Stud diameter: 1-1/4 inches. Roller OD: 3.000 inches. Basic dynamic load rating: 18,500 lbf. Basic static load rating: 34,000 lbf. Max speed: 900 RPM."},{"heading":"Mounting and Installation","content":"Standard cam followers mount via threaded stud into a tapped hole or through a clearance hole with a locknut. Recommended installation torque values:\n\nM16 stud: 85-95 Nm (63-70 ft-lbs)\nM20 stud: 140-155 Nm (103-114 ft-lbs)\nM24 stud: 230-255 Nm (170-188 ft-lbs)\nM30 stud: 380-420 Nm (280-310 ft-lbs)\n\nFor eccentric stud configurations (available on CF series), the eccentric provides 0.5mm to 2.0mm adjustment range for track clearance optimization. Eccentric adjustment should be locked with the provided set screw after positioning.\n\nMounting surface flatness: within 0.05mm per 100mm of mounting length. Misalignment tolerance: \u00b10.5\u00b0 axial, \u00b11.0\u00b0 radial."},{"heading":"Lubrication and Maintenance","content":"Standard cam followers are pre-lubricated with lithium complex grease. Re-lubrication interval: 500 hours for standard applications, 250 hours for heavy-load or high-temperature applications. Grease fitting: M6x1.0 Zerk fitting on stud end (CF series) or roller end (CFH series). Recommended grease: NLGI #2 lithium complex EP grease meeting DIN 51825 KP2K-30 specification.\n\nSealed variants (suffix -2RS) are available for all models with double-lip contact seals rated to IP54. Sealed variants are pre-lubricated for life and do not require re-lubrication under standard operating conditions (temperatures below 80\u00b0C, speeds below 50% of maximum rated speed)."}]},{"id":"conveyor-pulleys","title":"PCI ProCal Conveyor Pulley Product Line \u2014 Technical Specifications","category":"Product Specifications","sections":[{"heading":"Overview","content":"PCI ProCal manufactures conveyor pulleys for belt conveyor systems used in bulk material handling, package conveying, and aggregate processing. Our pulley product line includes head/drive pulleys, tail pulleys, snub pulleys, bend pulleys, and take-up pulleys. All pulleys are engineered per CEMA (Conveyor Equipment Manufacturers Association) standards and are available in standard and custom configurations."},{"heading":"Standard Drum Pulleys \u2014 DP Series","content":"DP-12: Face width: 12-60 inches. Shell diameter: 4-24 inches. Shaft diameter: 1-7/16 to 5-7/16 inches. Maximum belt tension: 1,200 lbs/inch of face width (at 4-inch diameter) to 12,000 lbs/inch (at 24-inch diameter). Shell construction: rolled and welded steel, ASTM A36. Standard end discs: hub-style with QD bushing bore. Hub material: ASTM A36 steel, stress-relieved.\n\nShell thickness by diameter: 4 inch: 3/16 inch wall. 6 inch: 1/4 inch wall. 8 inch: 5/16 inch wall. 10 inch: 3/8 inch wall. 12 inch: 3/8 inch wall. 14-18 inch: 1/2 inch wall. 20-24 inch: 5/8 inch wall."},{"heading":"Wing Pulleys \u2014 WP Series","content":"Wing pulleys are self-cleaning pulleys designed for tail and take-up positions on belt conveyors handling sticky or wet materials. The wing design allows material to fall through rather than building up on the pulley surface.\n\nWP-18: Face width: 18-72 inches. Shell diameter: 18-24 inches. Wing count: 4 (standard) or 6 (heavy-duty). Wing material: 1/4 inch A36 steel plate. Shaft diameter: 2-7/16 to 4-15/16 inches. Balance: CEMA Class B (static balance). Maximum belt speed: 600 FPM.\n\nWP-24: Face width: 24-84 inches. Shell diameter: 24-36 inches. Wing count: 6 (standard) or 8 (heavy-duty). Wing material: 3/8 inch A36 steel plate. Shaft diameter: 3-7/16 to 5-7/16 inches. Balance: CEMA Class C (dynamic balance required for speeds above 500 FPM). Maximum belt speed: 800 FPM."},{"heading":"Lagging Options","content":"Pulley lagging increases friction between the belt and pulley surface and protects the pulley shell from wear.\n\nRubber lagging: Available in 1/4, 3/8, and 1/2 inch thicknesses. Durometer: 60A (standard) or 40A (cold weather). Bonded directly to the pulley shell using cold-vulcanized adhesive. Diamond pattern standard; herringbone pattern available for wet conditions. Temperature range: -30\u00b0F to 180\u00b0F.\n\nCeramic lagging: Aluminum oxide ceramic tiles embedded in rubber backing. Tile size: 15mm x 15mm x 6mm. Pattern: 65% ceramic coverage (standard). Coefficient of friction: 0.35-0.45 (wet), 0.45-0.55 (dry). Temperature range: -30\u00b0F to 250\u00b0F. Recommended for high-tension drives, wet conditions, and applications requiring consistent friction.\n\nSlide lagging: UHMW polyethylene surface for snub and bend pulleys where belt wrap is less than 30\u00b0. Low friction coefficient (0.10-0.15). Temperature range: -60\u00b0F to 180\u00b0F."},{"heading":"Shaft and Bearing Selection","content":"Pulley shafts are manufactured from AISI 1045 cold-drawn steel, stress-relieved. Shaft deflection is limited to L/4000 at rated load per CEMA recommendations. Bearing types by application:\n\nPillow block bearings: SAF-style split housings with spherical roller bearings for shaft diameters up to 5-7/16 inches. Standard seals: triple-lip labyrinth. Bearing life: minimum L10 of 60,000 hours at rated capacity.\n\nFlanged bearings: For take-up applications requiring axial adjustment. Travel: 4-12 inches depending on frame size.\n\nBearing temperature monitoring: Optional RTD (PT100) sensors in bearing housings for predictive maintenance integration. Output: 4-20mA or RS-485 Modbus RTU."}]},{"id":"pneumatic-clutches","title":"PCI ProCal Pneumatic Clutch and Brake Systems \u2014 Technical Specifications","category":"Product Specifications","sections":[{"heading":"Overview","content":"PCI ProCal pneumatic clutches and brakes provide controlled torque transmission and stopping for conveyor drives, indexing mechanisms, press drives, and tension control applications. Our pneumatic products use air-actuated friction elements to engage and disengage rotating components. All units are designed for industrial duty cycles and are field-serviceable without removing the unit from the machine."},{"heading":"PC Series \u2014 Pneumatic Clutches","content":"PC-200: Single-disc clutch. Bore range: 1 to 2-1/2 inches. Torque capacity: 200 ft-lbs at 80 PSI. Maximum speed: 1,800 RPM. Air volume to engage: 15 cubic inches. Response time: 50 milliseconds (engage), 35 milliseconds (disengage). Friction material: woven composite, coefficient 0.40. Disc diameter: 8 inches. Weight: 22 lbs.\n\nPC-500: Single-disc clutch. Bore range: 1-1/2 to 3-1/2 inches. Torque capacity: 500 ft-lbs at 80 PSI. Maximum speed: 1,500 RPM. Air volume: 28 cubic inches. Response time: 65 milliseconds (engage), 45 milliseconds (disengage). Friction material: sintered metallic, coefficient 0.35. Disc diameter: 11 inches. Weight: 45 lbs.\n\nPC-1200: Dual-disc clutch. Bore range: 2 to 5 inches. Torque capacity: 1,200 ft-lbs at 80 PSI. Maximum speed: 1,200 RPM. Air volume: 55 cubic inches. Response time: 85 milliseconds (engage), 60 milliseconds (disengage). Friction material: sintered metallic, coefficient 0.35. Disc diameter: 14 inches. Weight: 95 lbs.\n\nPC-3000: Triple-disc clutch. Bore range: 3 to 7 inches. Torque capacity: 3,000 ft-lbs at 80 PSI. Maximum speed: 900 RPM. Air volume: 120 cubic inches. Response time: 120 milliseconds (engage), 80 milliseconds (disengage). Friction material: sintered metallic, coefficient 0.35. Disc diameter: 18 inches. Weight: 210 lbs."},{"heading":"PB Series \u2014 Pneumatic Brakes","content":"PB-150: Caliper-style brake. Torque capacity: 150 ft-lbs at 80 PSI. Disc diameter: 8 inches (disc not included \u2014 mounts to customer's disc or hub). Pad material: semi-metallic composite. Pad life: approximately 1,000,000 cycles at rated torque. Response time: 30 milliseconds. Spring-set option available for fail-safe stopping.\n\nPB-400: Caliper-style brake. Torque capacity: 400 ft-lbs at 80 PSI. Disc diameter: 12 inches. Response time: 40 milliseconds. Spring-set option available.\n\nPB-1000: Drum-style brake. Torque capacity: 1,000 ft-lbs at 80 PSI. Drum diameter: 16 inches. Shoe material: woven composite. Response time: 55 milliseconds. Spring-set standard on this model for emergency stop applications."},{"heading":"Air Supply Requirements","content":"All PCI pneumatic clutches and brakes require clean, dry, lubricated compressed air.\n\nPressure range: 40-100 PSI operating. Factory-set at 80 PSI. Torque output scales linearly with air pressure within this range. Below 40 PSI: engagement may be unreliable. Above 100 PSI: do not exceed \u2014 risk of seal damage and premature friction material wear.\n\nAir quality: ISO 8573-1 Class 4.4.4 minimum. Particulate: maximum 5 microns. Water content: pressure dew point 3\u00b0C above minimum ambient temperature. Oil content: 1-5 mg/m\u00b3 (light mist lubrication required for piston seal life).\n\nRecommended air preparation: FRL (Filter-Regulator-Lubricator) unit with 5-micron coalescing filter, precision regulator (\u00b12 PSI), and micro-mist lubricator set to 1-2 drops per minute. PCI part number: FRL-100 (1/4 NPT) or FRL-200 (1/2 NPT)."},{"heading":"Installation and Alignment","content":"Clutch alignment: Shaft-to-shaft alignment must be within 0.005 inches TIR (Total Indicated Runout) for bore-mounted installations. Coupling hubs should be gap-checked per coupling manufacturer specifications. Angular misalignment tolerance: 0.5\u00b0 maximum.\n\nBrake mounting: Caliper brakes must be mounted on a rigid bracket with less than 0.002 inches deflection under rated braking force. Disc runout: 0.010 inches TIR maximum. Pad-to-disc clearance: 0.030-0.060 inches per side (adjustable via shim washers).\n\nRotary union (for shaft-mounted clutches): Use PCI rotary union RU-series. Media: air. Maximum pressure: 150 PSI. Maximum speed: matches clutch maximum speed. Seal life: 5,000 hours typical. Replacement seal kits available."},{"heading":"Friction Material Replacement","content":"Friction materials are wear items and must be inspected regularly. Replace when wear indicator groove is no longer visible (0.030 inch groove depth indicates minimum thickness reached).\n\nPC-200 friction disc: Part number FD-200. Material: woven composite. Thickness new: 0.180 inches. Minimum thickness: 0.100 inches. Replacement time: 30 minutes (field-serviceable without removing clutch from shaft).\n\nPC-500 friction disc: Part number FD-500. Material: sintered metallic. Thickness new: 0.250 inches. Minimum thickness: 0.150 inches.\n\nPC-1200 friction discs (2x): Part number FD-1200. Material: sintered metallic. Thickness new: 0.250 inches each.\n\nPC-3000 friction discs (3x): Part number FD-3000. Material: sintered metallic. Thickness new: 0.310 inches each.\n\nBrake pad replacement follows similar procedures. All brake pads should be replaced in matched sets (both sides simultaneously)."}]},{"id":"maintenance-guide","title":"PCI ProCal Preventive Maintenance Guide \u2014 Conveying Equipment","category":"Maintenance & Service","sections":[{"heading":"Overview","content":"This guide covers preventive maintenance schedules and procedures for PCI ProCal conveying components including roller assemblies, cam followers, conveyor pulleys, and pneumatic clutches/brakes. Regular preventive maintenance extends component life, reduces unplanned downtime, and maintains system efficiency. PCI recommends establishing a PM program based on operating hours and environmental conditions."},{"heading":"Daily Inspection Checklist","content":"The following items should be checked at the beginning of each operating shift:\n\n1. Listen for unusual bearing noise (grinding, clicking, or squealing indicates bearing distress)\n2. Check for excessive roller vibration (hand-check: place hand on conveyor frame near rollers \u2014 noticeable vibration indicates bearing wear or imbalance)\n3. Verify belt tracking \u2014 belt should run centered on pulleys within \u00b11/2 inch\n4. Check pneumatic system pressure gauge \u2014 should read within \u00b15 PSI of setpoint\n5. Inspect for product buildup on rollers, pulleys, and under conveyor frame\n6. Check emergency stop functionality \u2014 test E-stop circuit at least once per shift\n7. Verify all guards and safety covers are in place and secure"},{"heading":"Weekly Maintenance","content":"1. Lubricate cam followers per schedule (every 500 operating hours, approximately weekly for single-shift operations)\n2. Check belt tension \u2014 belt should deflect 1-2% of span length when pressed with moderate force at mid-span\n3. Inspect lagging on drive pulley \u2014 check for delamination, cracking, or excessive wear\n4. Check chain and sprocket drives for proper tension and lubrication\n5. Inspect pneumatic hose connections for leaks \u2014 apply soapy water and watch for bubbles\n6. Drain moisture from FRL bowl and check lubricator oil level\n7. Clean photoeye sensors and proximity switches"},{"heading":"Monthly Maintenance","content":"1. Measure bearing temperature with infrared thermometer \u2014 temperature rise should not exceed 50\u00b0F above ambient. Temperature above 180\u00b0F indicates bearing distress.\n2. Check pulley shaft bearings for play \u2014 axial play should not exceed 0.010 inches; radial play should not exceed 0.005 inches\n3. Inspect all roller assemblies \u2014 spin each roller by hand, checking for rough spots, excessive drag, or wobble\n4. Check clutch/brake disc wear \u2014 measure friction material thickness and compare to minimum specification\n5. Test safety interlocks and speed monitoring devices\n6. Inspect take-up adjustment \u2014 ensure adequate travel remains for belt stretch compensation\n7. Check motor amperage against nameplate \u2014 draw exceeding 110% indicates mechanical binding or overloading"},{"heading":"Annual Maintenance and Overhaul","content":"1. Complete bearing replacement on rollers that have exceeded L10 life rating or show signs of wear (noise, heat, roughness)\n2. Re-align all pulley shafts \u2014 verify alignment is within 0.005 inches TIR\n3. Replace pneumatic clutch/brake friction materials if below 50% of original thickness (proactive replacement prevents unexpected failures)\n4. Rebuild FRL assemblies \u2014 replace filter element, regulator diaphragm, and lubricator seals\n5. Calibrate all sensors and instrumentation \u2014 bearing temperature monitors, speed sensors, belt scales\n6. Inspect structural steel for cracks, corrosion, or fatigue \u2014 pay special attention to support brackets and pulley frames\n7. Review PM records for recurring issues and adjust maintenance intervals accordingly"},{"heading":"Troubleshooting Quick Reference","content":"Roller not spinning freely: (1) Check for product buildup around bearing seals, (2) Check for seized bearing \u2014 replace roller assembly, (3) Check for bent shaft \u2014 roller will wobble when spun.\n\nExcessive belt slip on drive pulley: (1) Increase belt tension per manufacturer specs, (2) Check lagging condition \u2014 replace if worn smooth, (3) Check for contamination (water, oil) on lagging surface \u2014 clean with degreaser, (4) Consider upgrading to ceramic lagging for wet environments.\n\nPneumatic clutch not engaging: (1) Verify air pressure at clutch \u2014 minimum 40 PSI required, (2) Check solenoid valve \u2014 listen for click when energized, (3) Check rotary union for air leaks, (4) Inspect friction disc \u2014 worn discs reduce engagement force.\n\nCam follower noise: (1) Check lubrication \u2014 re-grease immediately, (2) Check for flat spots on roller OD \u2014 indicates static overloading, (3) Check stud torque \u2014 loose mounting causes vibration and premature wear, (4) Check track surface for debris or damage.\n\nBearing overheating: (1) Check lubrication level and type, (2) Check alignment \u2014 misalignment causes excess heat, (3) Check for overloading \u2014 compare actual load to bearing rating, (4) Check seal condition \u2014 damaged seals allow contamination entry."}]},{"id":"material-specs","title":"PCI ProCal Material Specifications and Quality Standards","category":"Quality & Materials","sections":[{"heading":"Steel Specifications","content":"PCI ProCal uses the following steel grades across its product lines:\n\nRoller tubes: ASTM A513 Type 5 (mechanical tubing, electric resistance welded). Yield strength: 50,000 PSI minimum. Tensile strength: 55,000 PSI minimum. Elongation: 20% minimum in 2 inches.\n\nPulley shells: ASTM A36 structural steel plate. Yield strength: 36,000 PSI minimum. Tensile strength: 58,000-80,000 PSI. Elongation: 20% minimum in 8 inches.\n\nShafts: AISI 1045 cold-drawn steel. Yield strength: 77,000 PSI. Tensile strength: 91,000 PSI. Hardness: 170-210 HB. Stress-relieved after machining.\n\nCam follower studs (heavy-duty): AISI 52100 bearing steel, through-hardened to 58-62 HRC. Fatigue limit: 85,000 PSI."},{"heading":"Surface Treatments and Coatings","content":"Zinc plating (standard on SR-1000 and SR-2000): ASTM B633, SC3 class, Type III (yellow chromate). Thickness: 0.0003-0.0005 inches. Salt spray resistance: 96 hours minimum per ASTM B117.\n\nHot-dip galvanizing (optional): ASTM A123, Grade 85. Coating thickness: 3.9 mils minimum. For outdoor and washdown environments.\n\nPowder coating (standard on SR-5000): Polyester TGIC powder. Film thickness: 2.0-3.5 mils. Color: PCI Blue (RAL 5015) standard, custom colors available. Pencil hardness: 2H minimum. Salt spray resistance: 1,000 hours minimum.\n\nBlack oxide (cam followers): MIL-DTL-13924, Class 1. Applied after heat treatment. Provides mild corrosion resistance and low-reflectivity appearance. Must be oiled for corrosion protection."},{"heading":"Quality Control and Testing","content":"PCI ProCal maintains ISO 9001:2015 certification for all manufacturing processes. Quality control procedures include:\n\n100% load testing: Every roller assembly is tested to 125% of rated capacity before shipment. Test duration: 30 seconds at rated speed. Pass criteria: no audible bearing distress, runout within specification, no permanent deformation.\n\nDimensional inspection: Critical dimensions (OD, length, bore, TIR) are verified per ASME Y14.5 geometric tolerancing. Sampling plan: first article and every 50th unit on production runs.\n\nMaterial certification: Mill test reports (MTRs) are maintained for all steel used in production. Chemical and physical properties are verified against specification requirements. MTRs are available upon request and are included with orders specifying ASTM A6 supplementary requirement S5.\n\nBearing verification: Bearing radial play, axial play, and running torque are verified on a sample basis per ABMA standards. Bearings that exceed specified play limits are rejected.\n\nFinal inspection: All finished goods are visually inspected for cosmetic defects, correct labeling, and packaging integrity before release to shipping."},{"heading":"Compliance and Certifications","content":"PCI ProCal products comply with the following standards and regulations:\n\nISO 9001:2015 \u2014 Quality Management System (Facility-wide certification)\nCEMA Standards \u2014 Conveyor pulleys, idlers, and belt conveyor components\nABMA Standards \u2014 Bearing specifications and tolerances\nASTM Standards \u2014 Material specifications (A36, A513, B633, A123)\nASME Y14.5 \u2014 Geometric dimensioning and tolerancing\nOSHA 29 CFR 1910.219 \u2014 Mechanical power transmission apparatus (guard design)\nNFPA 70 (NEC) \u2014 Electrical components on motorized assemblies\n\nFor food-grade applications: FDA 21 CFR 174-178 compliant materials available (316 SS construction, FDA-approved lubricants, and food-grade coatings). NSF/ANSI 169 listed configurations available upon request.\n\nRoHS and REACH compliance documentation is available for products shipped to the European Union."}]}];
+
+    // ── Pre-baked AI Responses ───────────────────────────────────────
+    const PREBAKED = {
+      "What is the load capacity of the SR-3000 roller assembly?": {
+        reply: "The **SR-3000** is a heavy-duty roller assembly with the following load specifications **[Source 1]**:\n\n- **Load capacity: 750 lbs per roller at 350 FPM**\n- Tube OD: 3.5 inches\n- Wall thickness: 0.120 inches (11 gauge)\n- Bearing type: sealed precision ball bearing, ABEC-3\n- Shaft diameter: 7/8 inch round\n- Standard lengths: 18 through 72 inches\n\nThe SR-3000 is available in **carbon steel, stainless steel (304 or 316), or aluminum 6061-T6**, and operates across a temperature range of **-40\u00b0F to 250\u00b0F** **[Source 1]**.\n\nFor context within the product line, the SR-3000 sits between the SR-2000 (250 lbs at 500 FPM) and the SR-5000 (2,500 lbs at 200 FPM) **[Source 1]**. Note the speed-load tradeoff \u2014 heavier-duty rollers have lower maximum belt speeds.\n\nBearing life for the SR-3000 at rated load is **30,000 hours (L10 life at rated speed)** **[Source 2]**. All SR-3000 bearings use Mobil Polyrex EM synthetic grease rated for continuous operation up to 350\u00b0F.",
+        sources: [
+          { index: 1, docTitle: "Roller Assembly Product Line", heading: "Standard Series \u2014 SR-1000 through SR-5000", category: "Product Specifications", score: 95 },
+          { index: 2, docTitle: "Roller Assembly Product Line", heading: "Bearing Specifications and Lubrication", category: "Product Specifications", score: 72 },
+          { index: 3, docTitle: "Roller Assembly Product Line", heading: "Custom and Specialty Rollers", category: "Product Specifications", score: 38 }
+        ]
+      },
+      "Compare the CF-6205 and CF-6208 cam followers": {
+        reply: "Here is a side-by-side comparison of the **CF-6205** and **CF-6208** cam followers **[Source 1]**:\n\n| Specification | CF-6205 | CF-6208 |\n|---|---|---|\n| **Stud diameter** | 16mm (0.630\") | 24mm (0.945\") |\n| **Roller OD** | 52mm (2.047\") | 80mm (3.150\") |\n| **Roller width** | 20.6mm (0.811\") | 29.5mm (1.161\") |\n| **Dynamic load rating** | 15.9 kN (3,575 lbf) | 32.5 kN (7,308 lbf) |\n| **Static load rating** | 10.2 kN (2,293 lbf) | 22.4 kN (5,035 lbf) |\n| **Max speed** | 3,000 RPM | 2,000 RPM |\n| **Stud thread** | M16x1.5 | M24x1.5 |\n| **Weight** | 0.22 kg | 0.72 kg |\n\n**Key differences:**\n\n- The CF-6208 offers roughly **2x the dynamic load capacity** (7,308 vs 3,575 lbf) but at a lower maximum speed (2,000 vs 3,000 RPM) **[Source 1]**.\n- The CF-6208 is **3.3x heavier** (0.72 kg vs 0.22 kg), which may matter in space-constrained applications.\n- Installation torque differs significantly: the CF-6205 (M16 stud) requires **85-95 Nm**, while the CF-6208 (M24 stud) requires **230-255 Nm** **[Source 2]**.\n\nBoth are standard ABMA-interchangeable sizes and use the same lubrication protocol: pre-lubricated with lithium complex grease, re-lubrication every 500 hours **[Source 3]**.",
+        sources: [
+          { index: 1, docTitle: "Cam Follower Product Line", heading: "CF Series \u2014 Standard Cam Followers", category: "Product Specifications", score: 97 },
+          { index: 2, docTitle: "Cam Follower Product Line", heading: "Mounting and Installation", category: "Product Specifications", score: 58 },
+          { index: 3, docTitle: "Cam Follower Product Line", heading: "Lubrication and Maintenance", category: "Product Specifications", score: 45 }
+        ]
+      },
+      "What lagging options are available for drive pulleys?": {
+        reply: "PCI ProCal offers **three types of pulley lagging**, each suited for different operating conditions **[Source 1]**:\n\n**1. Rubber Lagging** (most common)\n- Thicknesses: 1/4, 3/8, and 1/2 inch\n- Durometer: 60A standard, 40A for cold weather\n- Bonded with cold-vulcanized adhesive\n- Patterns: **diamond** (standard) or **herringbone** (wet conditions)\n- Temperature range: -30\u00b0F to 180\u00b0F\n\n**2. Ceramic Lagging** (high-performance)\n- Aluminum oxide tiles (15mm x 15mm x 6mm) in rubber backing\n- 65% ceramic coverage standard\n- Coefficient of friction: **0.35-0.45 wet, 0.45-0.55 dry**\n- Temperature range: -30\u00b0F to 250\u00b0F\n- **Recommended for:** high-tension drives, wet conditions, consistent friction\n\n**3. Slide Lagging** (low-friction applications)\n- UHMW polyethylene surface\n- Friction coefficient: 0.10-0.15\n- Temperature range: -60\u00b0F to 180\u00b0F\n- **Designed for:** snub and bend pulleys with belt wrap under 30\u00b0\n\nFor drive pulleys specifically, **rubber lagging** is the standard choice. Upgrade to **ceramic lagging** if you are dealing with wet environments, high belt tensions, or need consistent friction over time **[Source 1]**.\n\nIf lagging is showing wear, PCI's maintenance guide recommends checking it weekly and looking for delamination, cracking, or smooth spots **[Source 2]**.",
+        sources: [
+          { index: 1, docTitle: "Conveyor Pulley Product Line", heading: "Lagging Options", category: "Product Specifications", score: 98 },
+          { index: 2, docTitle: "Preventive Maintenance Guide", heading: "Weekly Maintenance", category: "Maintenance & Service", score: 41 },
+          { index: 3, docTitle: "Preventive Maintenance Guide", heading: "Troubleshooting Quick Reference", category: "Maintenance & Service", score: 35 }
+        ]
+      },
+      "How do I troubleshoot a pneumatic clutch that won't engage?": {
+        reply: "Here is the troubleshooting procedure for a pneumatic clutch that won't engage, drawn from PCI ProCal's maintenance documentation **[Source 1]** **[Source 2]**:\n\n**Step 1: Verify air pressure at the clutch**\n- Minimum **40 PSI** required for reliable engagement **[Source 2]**\n- Factory setpoint is 80 PSI; torque scales linearly with pressure\n- Below 40 PSI, engagement may be unreliable\n- Check the FRL (Filter-Regulator-Lubricator) unit \u2014 verify the regulator is set correctly (\u00b12 PSI)\n\n**Step 2: Check the solenoid valve**\n- Listen for an audible click when the valve is energized **[Source 1]**\n- No click = electrical issue (check wiring, control signal, fuse)\n- Click but no air flow = valve stuck or failed (replace valve)\n\n**Step 3: Check the rotary union for air leaks**\n- Rotary unions (RU-series) have a typical seal life of 5,000 hours **[Source 3]**\n- Apply soapy water around the rotary union and watch for bubbles\n- Replacement seal kits are available from PCI\n\n**Step 4: Inspect the friction disc**\n- Worn discs reduce engagement force **[Source 1]**\n- Check the wear indicator groove (0.030\" depth) \u2014 if no longer visible, replace immediately\n- Part numbers: FD-200, FD-500, FD-1200, FD-3000 depending on clutch model **[Source 4]**\n- Replacement is field-serviceable (30 minutes for PC-200, no need to remove clutch from shaft)\n\n**Additional checks:**\n- Verify air quality meets ISO 8573-1 Class 4.4.4 \u2014 contaminated air can damage piston seals **[Source 2]**\n- Check that the lubricator is set to 1-2 drops/minute for piston seal life",
+        sources: [
+          { index: 1, docTitle: "Preventive Maintenance Guide", heading: "Troubleshooting Quick Reference", category: "Maintenance & Service", score: 96 },
+          { index: 2, docTitle: "Pneumatic Clutch and Brake Systems", heading: "Air Supply Requirements", category: "Product Specifications", score: 78 },
+          { index: 3, docTitle: "Pneumatic Clutch and Brake Systems", heading: "Installation and Alignment", category: "Product Specifications", score: 52 },
+          { index: 4, docTitle: "Pneumatic Clutch and Brake Systems", heading: "Friction Material Replacement", category: "Product Specifications", score: 48 }
+        ]
+      }
+    };
+
+    // ── TF-IDF Search Engine (client-side) ────────────────────────────
+    const STOP_WORDS = new Set([
+      'the','a','an','and','or','but','in','on','at','to','for','of','with',
+      'by','from','is','are','was','were','be','been','being','have','has',
+      'had','do','does','did','will','would','could','should','may','might',
+      'shall','can','this','that','these','those','it','its','not','no','as',
+      'if','than','each','all','any','per','our','we','us','also'
+    ]);
+
+    function tokenize(text) {
+      return text.toLowerCase().replace(/[^a-z0-9\s.-]/g, ' ')
+        .split(/\s+/).filter(t => t.length > 1 && !STOP_WORDS.has(t));
+    }
+
+    function buildIndex(docs) {
+      const chunks = [];
+      for (const doc of docs) {
+        for (const section of doc.sections) {
+          chunks.push({
+            docId: doc.id, docTitle: doc.title, category: doc.category,
+            heading: section.heading, content: section.content,
+            tokens: tokenize(section.content + ' ' + section.heading)
+          });
+        }
+      }
+      const docCount = chunks.length;
+      const df = new Map();
+      for (const chunk of chunks) {
+        const unique = new Set(chunk.tokens);
+        for (const t of unique) df.set(t, (df.get(t) || 0) + 1);
+      }
+      for (const chunk of chunks) {
+        const tf = new Map();
+        for (const t of chunk.tokens) tf.set(t, (tf.get(t) || 0) + 1);
+        chunk.tfidf = new Map();
+        for (const [term, count] of tf) {
+          const idf = Math.log(docCount / (df.get(term) || 1));
+          chunk.tfidf.set(term, (count / chunk.tokens.length) * idf);
+        }
+      }
+      return { chunks, df, docCount };
+    }
+
+    function searchDocs(index, query, topK = 5) {
+      const qTokens = tokenize(query);
+      const qTf = new Map();
+      for (const t of qTokens) qTf.set(t, (qTf.get(t) || 0) + 1);
+      const qTfidf = new Map();
+      for (const [term, count] of qTf) {
+        const idf = Math.log(index.docCount / (index.df.get(term) || 1));
+        qTfidf.set(term, (count / qTokens.length) * idf);
+      }
+      const scores = index.chunks.map((chunk, i) => {
+        let dot = 0, qMag = 0, cMag = 0;
+        for (const [term, w] of qTfidf) {
+          qMag += w * w;
+          dot += w * (chunk.tfidf.get(term) || 0);
+        }
+        for (const [, w] of chunk.tfidf) cMag += w * w;
+        qMag = Math.sqrt(qMag); cMag = Math.sqrt(cMag);
+        return { index: i, score: (qMag && cMag) ? dot / (qMag * cMag) : 0 };
+      });
+      scores.sort((a, b) => b.score - a.score);
+      return scores.slice(0, topK).filter(s => s.score > 0).map(s => {
+        const c = index.chunks[s.index];
+        return { docTitle: c.docTitle, heading: c.heading, category: c.category, content: c.content, score: s.score };
+      });
+    }
+
+    // ── Build search index on load ───────────────────────────────────
+    const searchIndex = buildIndex(documents);
+
+    // ── UI Logic ─────────────────────────────────────────────────────
+    const messagesEl = document.getElementById('messages');
+    const inputEl = document.getElementById('input');
+    const sendBtn = document.getElementById('sendBtn');
+    const welcomeEl = document.getElementById('welcome');
+    const sidebarEl = document.getElementById('sidebar');
+
+    let isLoading = false;
+
+    inputEl.addEventListener('input', () => {
+      inputEl.style.height = 'auto';
+      inputEl.style.height = Math.min(inputEl.scrollHeight, 120) + 'px';
+    });
+
+    // Populate sidebar knowledge base
+    for (const doc of documents) {
+      const item = document.createElement('div');
+      item.className = 'doc-item';
+      const shortTitle = doc.title.replace('PCI ProCal ', '').replace(' \u2014 Technical Specifications', '').replace(' \u2014 Conveying Equipment', '');
+      item.innerHTML = '<div class="doc-title">' + escapeHtml(shortTitle) + '</div>' +
+        '<div class="doc-cat">' + escapeHtml(doc.category) + '</div>' +
+        '<div class="doc-sections">' + doc.sections.length + ' sections</div>' +
+        '<ul class="doc-section-list">' +
+        doc.sections.map(s => '<li>' + escapeHtml(s.heading) + '</li>').join('') +
+        '</ul>';
+      item.addEventListener('click', () => item.classList.toggle('expanded'));
+      sidebarEl.appendChild(item);
+    }
+
+    function askExample(btn) {
+      inputEl.value = btn.textContent;
+      sendMessage();
+    }
+
+    async function sendMessage() {
+      const msg = inputEl.value.trim();
+      if (!msg || isLoading) return;
+
+      isLoading = true;
+      sendBtn.disabled = true;
+      inputEl.value = '';
+      inputEl.style.height = 'auto';
+
+      if (welcomeEl) welcomeEl.remove();
+
+      appendMessage('user', msg);
+
+      // Show typing indicator
+      const typingEl = document.createElement('div');
+      typingEl.className = 'message assistant';
+      typingEl.innerHTML = '<div class="typing-indicator"><span></span><span></span><span></span></div>';
+      messagesEl.appendChild(typingEl);
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+
+      // Simulate response delay
+      await new Promise(r => setTimeout(r, 800 + Math.random() * 1200));
+      typingEl.remove();
+
+      // Check for pre-baked response
+      const prebaked = PREBAKED[msg];
+      if (prebaked) {
+        appendMessage('assistant', prebaked.reply, prebaked.sources);
+      } else {
+        // Show search results with explanation
+        const results = searchDocs(searchIndex, msg, 3);
+        let fallbackHtml = '<div class="reply"><p>In the <strong>full version</strong>, your question would be answered by Claude AI using retrieved documentation as context. This demo shows the knowledge base retrieval results below.</p></div>';
+        if (results.length > 0) {
+          fallbackHtml += '<div class="search-results"><h4>Retrieved Documentation Sections</h4>';
+          results.forEach((r, i) => {
+            const shortTitle = r.docTitle.replace('PCI ProCal ', '').replace(' \u2014 Technical Specifications', '').replace(' \u2014 Conveying Equipment', '');
+            const excerpt = r.content.substring(0, 300) + (r.content.length > 300 ? '...' : '');
+            fallbackHtml += '<div class="search-result-item"><div class="result-title">[' + (i + 1) + '] ' + escapeHtml(shortTitle) + ' \u203a ' + escapeHtml(r.heading) + ' <span class="source-tag"><span class="score">' + Math.round(r.score * 100) + '%</span></span></div><div class="result-excerpt">' + escapeHtml(excerpt) + '</div></div>';
+          });
+          fallbackHtml += '</div>';
+        }
+        const el = document.createElement('div');
+        el.className = 'message assistant';
+        el.innerHTML = fallbackHtml;
+        messagesEl.appendChild(el);
+        messagesEl.scrollTop = messagesEl.scrollHeight;
+      }
+
+      isLoading = false;
+      sendBtn.disabled = false;
+      inputEl.focus();
+    }
+
+    function appendMessage(role, content, sources) {
+      const el = document.createElement('div');
+      el.className = 'message ' + role;
+      if (role === 'assistant') {
+        let html = '<div class="reply">' + formatMarkdown(content) + '</div>';
+        if (sources && sources.length > 0) {
+          html += '<div class="sources">';
+          for (const s of sources) {
+            const shortTitle = s.docTitle.replace('PCI ProCal ', '').replace(' Product Line', '').replace(' \u2014 Technical Specifications', '').replace(' \u2014 Conveying Equipment', '');
+            html += '<span class="source-tag" title="' + escapeHtml(s.docTitle) + ' \u2014 ' + escapeHtml(s.heading) + '">[' + s.index + '] ' + escapeHtml(shortTitle) + ' \u203a ' + escapeHtml(s.heading) + '<span class="score">' + s.score + '%</span></span>';
+          }
+          html += '</div>';
+        }
+        el.innerHTML = html;
+      } else {
+        el.textContent = content;
+      }
+      messagesEl.appendChild(el);
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+    }
+
+    function formatMarkdown(text) {
+      return text
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\*(.+?)\*/g, '<em>$1</em>')
+        .replace(/`(.+?)`/g, '<code>$1</code>')
+        .replace(/\[Source (\d+)\]/g, '<strong>[Source $1]</strong>')
+        .replace(/\|(.+)\|/g, function(match) {
+          return match;
+        })
+        .replace(/\n\n/g, '</p><p>')
+        .replace(/\n- /g, '</li><li>')
+        .replace(/^/, '<p>')
+        .replace(/$/, '</p>')
+        .replace(/<p><\/li>/g, '<ul><li>')
+        .replace(/<\/li><\/p>/g, '</li></ul>');
+    }
+
+    function escapeHtml(str) {
+      const div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    }
+  </script>
+</body>
+</html>
